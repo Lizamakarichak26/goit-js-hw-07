@@ -1,42 +1,50 @@
 import { galleryItems } from "./gallery-items.js";
 
-const gallery = document.querySelector(".gallery");
+const galleryContainer = document.querySelector('.gallery');
+const itemsMarkup = createGalleryItemsMarkup(galleryItems);
+galleryContainer.insertAdjacentHTML('beforeend', itemsMarkup);
+galleryContainer.addEventListener('click', onImgClick);
 
-for (let i = 0; i < galleryItems.length; i++) {
-  const galleryItem = galleryItems[i];
-  const currentImageSource = galleryItem.preview;
-  const item = `<li class="gallery__item">
-    <a class="gallery__link" href="${galleryItem.original}">
-      <img
-        class="gallery__image"
-        src="${currentImageSource}"
-        data-source="${galleryItem.original}"
-        alt="${galleryItem.description}"
-      />
-    </a>
-  </li>`;
-  gallery.innerHTML += item;
+// rendered items
+function createGalleryItemsMarkup(items) {
+  return items
+    .map(({ preview, original, description }) => {
+      return `<div class="gallery__item">
+  <a class="gallery__link" href="${original}">
+    <img
+      class="gallery__image"
+      src="${preview}"
+      data-source="${original}"
+      alt="${description}"
+    />
+  </a>
+</div>`;
+    })
+    .join('');
 }
 
-gallery.addEventListener("click", (event) => {
-  event.preventDefault();
-
-  if (event.target.classList.contains("gallery__image")) {
-    const imageSource = event.target.dataset.source;
-
-    const modal = basicLightbox.create(`
-      <img src="${imageSource}" width="800" height="600">
-    `);
-
-    modal.show();
-
-    const closeModalOnEsc = (event) => {
-      if (event.key === "Escape") {
-        modal.close();
-        document.removeEventListener("keydown", closeModalOnEsc);
-      }
-    };
-
-    document.addEventListener("keydown", closeModalOnEsc);
+const instance = basicLightbox.create(
+  `
+<img width="1280" height="auto" src="">`,
+  {
+    onShow: (instance) => {
+      window.addEventListener('keydown', onEscKeyPress);
+    },
+    onClose: (instance) => {
+      window.removeEventListener('keydown', onEscKeyPress);
+    },
   }
-});
+);
+
+function onImgClick(e) {
+  e.preventDefault();
+  const datasetSource = e.target.dataset.source;
+  if (!datasetSource) return;
+  instance.element().querySelector('img').src = datasetSource;
+  instance.show();
+}
+
+function onEscKeyPress(e) {
+  if (e.code !== 'Escape') return;
+  instance.close();
+}
